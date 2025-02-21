@@ -1,6 +1,19 @@
 ### Read training data
 # ! Perhaps you need to set the working directory!?
-setwd("/mnt/c/Users/alessia/OneDrive - Danmarks Tekniske Universitet/Time_Series/Assignment1/")
+
+# Install the required packages
+# install.packages("fpp2")
+# install.packages("dplyr")
+# install.packages("tidyverse")
+
+# Load the packages
+library(fpp2)
+library(dplyr)
+library(tidyverse)
+
+setwd("Time_series_assignments/Assignment1")
+# Print the current working directory
+print(getwd())
 
 D <- read.csv("DST_BIL54.csv")
 str(D)
@@ -24,130 +37,133 @@ Dtest <- D[D$time >= teststart, ]
 
 
 # 1.1 and 1.2
-x <- Dtrain$year
-y <- Dtrain$total
 
-X <- cbind(1, x)
-
-plot(x, y,
-    type = "l", col = "blue",
-    xlab = "Year", ylab = "Total (millions)",
-    main = "Training Data over Time"
-)
+### Plot train and test data
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="red") + 
+  geom_point(data=Dtrain, col="black") +
+  xlim(2018, 2024) 
 
 # 2 Linear trend model
 # 2.2 Estimate theta 1 and theta 2 and standard error of estimates
-set.seed(123)
-model <- lm(y ~ x)
-summary(model)
+# we will fit a linear model: Y_i = beta_0 + beta_1 * time_i + epsilon_i
+# so we have two parameters: beta_0 and beta_1
+p <- 2
 
-# Scatter plot with regression line
-plot(x, y, pch = 16, col = "blue", main = "Linear Model Fit")
-abline(model, col = "red", lwd = 2) # Add regression line
+# we also save the number of observations (26 obs. in the training data):
+n <- length(Dtrain$year)
 
-# 2.3 Forecast next 12 months
-theta <- coef(model)
-epsilons <- rnorm(12, 0, summary(model)$sigma)
-xnew <- seq(2024, 2024 + 11 / 12, 1 / 12)
+# X is the "design matrix"
+X <- cbind(1, Dtrain$year)
+print(X)
 
-Xnew <- cbind(1, xnew)
-ynew <- Xnew %*% theta #+ epsilons 
+# y is vector with observations:
+y <- cbind(Dtrain$total)
+print(y)
 
-# Present results as a table
-results <- data.frame(time = xnew, forecast = ynew)
-results
+# to estimate parameters we solve the "normal equations":
+theta_OLS <- solve(t(X)%*%X)%*%t(X)%*%y
+print(theta_OLS)
 
-# 2.4 Plot the forecasted values together with the training data, the fitted model, and prediction intervals
+# these are the parameter estimates!
+theta_0 <- theta_OLS[1]
+theta_1 <- theta_OLS[2]
 
-N <- length(y) # Number of training observations
-p <- length(theta) # Number of parameters (intercept and slope)
-df <- N - p # Degrees of freedom
-t_critical <- qt(0.975, df) # Critical t-value for 95% confidence level
+# now we compute y_hat values (so thet we can plot the regression line) 
+yhat_ols <- X%*%theta_OLS
 
-XTX_inv <- solve(t(X) %*% X) # Inverse of (X'X)
+# plot:
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="red") + 
+  geom_line(aes(y=yhat_ols), col="red", size=.5) 
 
-# Compute the standard errors of the predictions
-prediction_errors <- apply(Xnew, 1, function(x) {
-    # Compute the variance term
-    var_term <- t(x) %*% XTX_inv %*% x
-    # Compute the standard error for the prediction
-    se_pred <- summary(model)$sigma * sqrt(1 + var_term)
-    return(se_pred)
-})
+# we will now calculate the standard errors on the parameters beta_0 and beta_1:
 
-lower_bound <- ynew - t_critical * prediction_errors
-upper_bound <- ynew + t_critical * prediction_errors
+# first compute residuals:
+e_ols <- y - yhat_ols
 
-# Make the plot
-plot(x, y,
-    pch = 16, col = "blue", main = "Linear Model Fit with Shaded Prediction Intervals",
-    xlim = c(min(x), max(xnew)), ylim = c(min(c(y, ynew, lower_bound)) - 0.01, max(c(y, ynew, upper_bound)) + 0.01)
-)
+# calculate sum of squared residuals:
+RSS_ols <- t(e_ols)%*%e_ols
 
-# Add regression line
-abline(model, col = "red", lwd = 2)
+# calculate sigma^2:
+sigma2_ols <- as.numeric(RSS_ols/(n - p))
 
-# Add forecast points
-points(xnew, ynew, pch = 16, col = "green")
+# calculate variance-covariance matrix of _parameters_:
+V_ols <- sigma2_ols * solve(t(X) %*% X)
+print(V_ols)
 
-# Shade the area between the lower and upper bounds
-polygon(c(xnew, rev(xnew)), c(lower_bound, rev(upper_bound)), col = rgb(0.5, 0.5, 1, 0.3), border = NA)
+# the variances of the parameters are the values in the diagonal:
+diag(V_ols)
+# and the standard errors are given by:
+sqrt(diag(V_ols))
 
-# Plot the prediction intervals as two lines (lower and upper bounds)
-lines(xnew, lower_bound, col = "purple", lty = 2) # Lower bound line
-lines(xnew, upper_bound, col = "purple", lty = 2) # Upper bound line
+se_theta_0 <- (sqrt(diag(V_ols)))[1] # standard error of the intercept-parameter
+se_theta_1 <- (sqrt(diag(V_ols)))[2] # standard error of the slope-parameter
 
-# Legend to distinguish the data points and prediction intervals
-legend("topleft",
-    legend = c("Training Data", "Fitted Model", "Forecasted Points", "Prediction Interval"),
-    col = c("blue", "red", "green", "purple"), pch = c(16, NA, 16, NA), lty = c(NA, 1, NA, 2), lwd = c(NA, 2, NA, 1), inset = c(0.05, 0.05)
-)
+# now we have both point estimates and standard errors:
+# intercept:
+theta_0
+se_theta_0
+# slope:
+theta_1
+se_theta_1
 
-# 2.6 Investigate the residuals
-# Residual analysis is a crucial step in validating the assumptions of a linear regression model. The key assumptions are:
+# Predictions for future values ("forecast")
+# now we use the model for predictions on future timepoints
+# we use the timepoints from the testdata:
+Xtest <- cbind(1, Dtest$year)
+print(Xtest)
 
-# - Independence: The residuals should not exhibit patterns (i.e., they should be white noise).
-# - Normality: The residuals should follow a normal distribution.
-# - Constant variance (Homoscedasticity): The variance of residuals should be constant across time.
-# - No Autocorrelation: The residuals should not show any correlation with past residuals.
+# compute predictions (we compute all 10 predictions at once):
+y_pred <- Xtest%*%theta_OLS
+print(y_pred)
 
-residuals <- model$residuals
-fitted_values <- model$fitted.values
+# compute prediction variance-covariance matrix:
+Vmatrix_pred <- sigma2_ols*(1+(Xtest%*%solve(t(X)%*%X))%*%t(Xtest))
+# the variances of individual predictions are in the diagonal of the matrix above
+print(diag(Vmatrix_pred))
 
-# Time series plot detecting patterns in the residuals over time, such as trends or cycles.
-plot(x, residuals,
-    type = "l", col = "blue",
-    xlab = "Year", ylab = "Residuals",
-    main = "Time Series Plot of Residuals"
-)
-abline(h = 0, col = "red") # Add a horizontal line at 0
-
-# Scatter plot of residuals vs. input variable (x) to examine whether there is a relationship between residuals and the input variable
-plot(x, residuals,
-    pch = 16, col = "blue",
-    xlab = "Year", ylab = "Residuals",
-    main = "Residuals vs. Year"
-)
-abline(h = 0, col = "red") # Add a horizontal line at 0
-
-# ACF of residuals to understand whether the residuals have any autocorrelation (i.e., whether a residual at time t is related to the residual at time t-k for some lag k)
-acf(residuals, main = "ACF of Residuals")
-
-# CCF between residuals and input variable to understand whether the residuals are correlated with the input variable at different time lags
-ccf(x, residuals, main = "CCF between Residuals and Input")
-
-# Histogram of residuals to inspect the distribution of the residuals.
-hist(residuals,
-    breaks = 20, col = "blue",
-    xlab = "Residuals", main = "Histogram of Residuals"
-)
-
-# QQ plot of residuals to assess the normality of the residuals. If the residuals follow a normal distribution, the points should fall approximately along the diagonal line.
-qqnorm(residuals)
-qqline(residuals, col = "red")
+# compute "prediction intervals" 
+y_pred_lwr <- y_pred - qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
+y_pred_upr <- y_pred + qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
 
 
-# Since the residuals doesn't follow a normal distribution it means that the model is not the best fit for the data.
+# plot forecast:
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="red") + 
+  geom_line(aes(y=yhat_ols), col="red", size=.5) +
+  geom_point(data=Dtest, aes(x=year,y=y_pred), col="red", size=.5) +
+  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") # +
+  # xlim(1980, 2020) + ylim(0, 8)
+
+# plot WITH true test data:
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="red") + 
+  geom_line(aes(y=yhat_ols), col="red", size=.5) +
+  geom_point(data=Dtest, aes(x=year,y=y_pred), col="red", size=.5) +
+  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.2, fill="red") +
+  geom_point(data=Dtest, aes(x=year,y=total), col="black") # +
+  # xlim(1980, 2020) + ylim(0, 8)
 
 
+#2.6
+# qq plot of residuals:
+qqnorm(e_ols)
+qqline(e_ols)
 
+# plot residuals versus x (year):
+ggplot(Dtrain, aes(x=year)) +
+  geom_point(aes(y=e_ols), col="blue") +
+  geom_line(aes(y=e_ols), col="blue") + 
+  ylim(-1,1)
+
+# plot some white noise:
+set.seed(876573)
+white_noise = rnorm(n=72, mean = 0, sd = sqrt(sigma2_ols))
+qqnorm(white_noise)
+qqline(white_noise)
+
+ggplot(Dtrain, aes(x=year)) +
+  geom_point(aes(y=white_noise), col="blue") +
+  geom_line(aes(y=white_noise), col="blue") + 
+  ylim(-1, 1)
