@@ -11,7 +11,7 @@ library(fpp2)
 library(dplyr)
 library(tidyverse)
 
-setwd("Time_series_assignments/Assignment1")
+setwd("Assignment1")
 # Print the current working directory
 print(getwd())
 
@@ -57,6 +57,9 @@ n <- length(Dtrain$year)
 X <- cbind(1, Dtrain$year)
 print(X)
 
+# Define covariance matrix for the OLS model
+SIGMA_OLS <- diag(n)
+SIGMA_OLS[7:12,7:12]
 # y is vector with observations:
 y <- cbind(Dtrain$total)
 print(y)
@@ -167,3 +170,56 @@ ggplot(Dtrain, aes(x=year)) +
   geom_point(aes(y=white_noise), col="blue") +
   geom_line(aes(y=white_noise), col="blue") + 
   ylim(-1, 1)
+
+# Exercise 3: WLS
+# Exericse 3.1 : Describe the covraiance matrix
+
+lambda = 0.9
+weights <- lambda^((n-1):0)
+
+SIGMA <- diag(n)
+diag(SIGMA) <- 1/weights
+# print lower right corner to check:
+print(SIGMA[20:26,20:26]) # Looks good
+
+# Exercise 3.2: Plot lambda weights vs time
+barplot(weights, names=1:72)
+
+# Exercise 3: Calculate the sum of all lambda weights
+WLS_weight_sum <- sum(weights)
+OLS_weight_sum <- sum(SIGMA_OLS)
+WLS_weight_sum
+OLS_weight_sum
+
+# Exercise 3.4: Estimate theta 1 and theta 2 with lambda = 0.9
+theta_WLS <- solve(t(X)%*%solve(SIGMA)%*%X)%*%(t(X)%*%solve(SIGMA)%*%y)
+print(theta_WLS)
+yhat_wls <- X%*%theta_WLS
+
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="black") + 
+  geom_line(aes(y=yhat_ols), col="red", size=.5, linetype=2) +
+  geom_line(aes(y=yhat_wls), col="blue", size=.5)
+
+# Exercise 3.5: Make the forecast for the next 12 months
+y_pred_wls <- Xtest%*%theta_WLS
+
+# Compute the prediction intervals
+e_wls <- y - yhat_wls
+RSS_wls <- t(e_wls)%*%solve(SIGMA)%*%e_wls
+sigma2_wls <- as.numeric(RSS_wls/(n - p))
+Vmatrix_pred <- sigma2_wls * (1 + (Xtest %*% solve(t(X)%*%solve(SIGMA)%*%X)) %*% t(Xtest) )
+y_pred_lwr_wls <- y_pred_wls - qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
+y_pred_upr_wls <- y_pred_wls + qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
+
+# Plot of observation for training set, OLS predictions, WLS predictions and prediction intervals
+ggplot(Dtrain, aes(x=year, y=total)) +
+  geom_point(col="red") + 
+  geom_line(aes(y=yhat_ols), col="red", size=.5, linetype=2) +
+  geom_point(data=Dtest, aes(x=year,y=y_pred), col="red", size=.5) +
+  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.1, fill="red") +
+  geom_point(data=Dtest, aes(x=year,y=total), col="black") +
+  geom_line(aes(y=yhat_wls), col="blue", size=.5) +
+  geom_point(data=Dtest, aes(x=year,y=y_pred_wls), col="blue", size=.5) +
+  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr_wls, ymax=y_pred_upr_wls), inherit.aes=FALSE, alpha=0.2, fill="blue") 
+#coord_cartesian(ylim = c(0, 8), xlim = c(1980,2020)) 
