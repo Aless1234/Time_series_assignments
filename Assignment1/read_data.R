@@ -108,7 +108,7 @@ se_theta_0
 theta_1
 se_theta_1
 
-# Predictions for future values ("forecast")
+# 2.3 Predictions for future values ("forecast")
 # now we use the model for predictions on future timepoints
 # we use the timepoints from the testdata:
 Xtest <- cbind(1, Dtest$year)
@@ -128,7 +128,7 @@ y_pred_lwr <- y_pred - qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
 y_pred_upr <- y_pred + qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
 
 
-# plot forecast:
+# 2.4 plot forecast:
 ggplot(Dtrain, aes(x=year, y=total)) +
   geom_point(col="red") + 
   geom_line(aes(y=yhat_ols), col="red", size=.5) +
@@ -146,7 +146,7 @@ ggplot(Dtrain, aes(x=year, y=total)) +
   # xlim(1980, 2020) + ylim(0, 8)
 
 
-#2.6
+#2.6 Investigate residuals
 # qq plot of residuals:
 qqnorm(e_ols)
 qqline(e_ols)
