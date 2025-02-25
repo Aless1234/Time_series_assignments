@@ -223,3 +223,64 @@ ggplot(Dtrain, aes(x=year, y=total)) +
   geom_point(data=Dtest, aes(x=year,y=y_pred_wls), col="blue", size=.5) +
   geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr_wls, ymax=y_pred_upr_wls), inherit.aes=FALSE, alpha=0.2, fill="blue") 
 #coord_cartesian(ylim = c(0, 8), xlim = c(1980,2020)) 
+
+#################################################
+# 4 - RLS 
+#################################################
+# 4.2 Implement the update equations
+
+theta <- c(0, 0)
+theta
+R <- diag(0.1, 2)
+R
+
+# Recursive Least Squares Loop
+for (t in 1:3) {
+    x_t <- matrix(X[t, ], nrow = 2, ncol = 1)  # Extract current x_t as a row vector
+    
+    # Update covariance matrix
+    R <-  R + x_t %*% t(x_t)
+
+    # Update parameter estimate
+    theta <- theta + solve(R) %*% x_t %*% (y[t] - t(x_t) %*% theta)
+    # Print results
+    cat("Iteration", t, "\n")
+    print(theta)
+    print(R)
+}
+
+
+# 4.3 Calculate the estimates of theta_N and compare to the OLS estimates
+
+# Initialize the parameter estimates and covariance matrix
+theta <- c(1000,1000)
+R <- diag(0.01, 2)
+# R <- diag(1000, 2)
+# R <- diag(0.000001, 2)  # Start wit smaller values for the covariance matrix
+
+
+# Recursive Least Squares Loop
+for (t in 1:n) {
+    x_t <- matrix(X[t, ], nrow = 2, ncol = 1)  # Extract current x_t as a row vector
+    
+    # Update covariance matrix
+    R <- R + x_t %*% t(x_t)
+
+    # Update parameter estimate
+    theta <- theta + solve(R) %*% x_t %*% (y[t] - t(x_t) %*% theta)
+}
+
+# # Print results
+# print(theta)
+# print(theta_OLS)
+
+# R26 <- t(X)%*%X
+# print(R26)
+
+# h26 <- t(X)%*%y
+# print(h26)
+
+# RLS26 <- solve(R26)%*%h26
+# print(RLS26)
+
+# 4.4 Implement RLS with forgetting
