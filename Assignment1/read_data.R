@@ -26,7 +26,7 @@ class(D$time)
 
 ## Year to month for each of them
 D$year <- 1900 + as.POSIXlt(D$time)$year + as.POSIXlt(D$time)$mon / 12
-
+# 
 ## Make the output variable a floating point (i.e.\ decimal number)
 D$total <- as.numeric(D$total) / 1E6
 
@@ -184,7 +184,13 @@ diag(SIGMA) <- 1/weights
 print(SIGMA[20:26,20:26]) # Looks good
 
 # Exercise 3.2: Plot lambda weights vs time
-barplot(weights, names=1:72)
+barplot(weights, names.arg = 1:72, 
+        xlab = "Time (Observation)", 
+        ylab = "Lambda Weights", 
+        cex.names = 1.2,    # Increase size of x-axis labels
+        cex.axis = 1.2,     # Increase size of axis numbers
+        cex.lab = 1.5)      # Increase size of axis labels
+
 
 # Exercise 3: Calculate the sum of all lambda weights
 WLS_weight_sum <- sum(weights)
@@ -395,7 +401,7 @@ RLS_forgetting_with_residuals <- function(lambda) {
       predictions[t] <- t(x_t) %*% theta
 
       # Compute the residual (ˆεt|t−1 = ˆyt|t−1 − yt−1)
-      residuals[t] <- y_t - predictions[t]
+      residuals[t] <- predictions[t] - y_t
   }
   return(list(theta_estimates = theta_estimates, predictions = predictions, residuals = residuals))
 }
@@ -452,3 +458,132 @@ ggplot(df_residuals_time, aes(x = time, y = residuals, color = lambda)) +
   theme_minimal() +
   ylim(-0.15, 0.15)  # Adjust the y-axis for better visualization
 
+
+
+
+
+
+# 4.6 Optimize the forgetting for the horizons k = 1,...,12
+
+compute_residuals <- function(actual, predicted, k) {
+  N <- length(actual)
+  residuals <- numeric(N - k)
+  
+  for (t in (k+1):N) {
+    residuals[t - k] <- predicted[t - k] - actual[t]
+  }
+  
+  return(residuals)
+}
+
+compute_rmse <- function(residuals) {
+  return(sqrt(mean(residuals^2, na.rm = TRUE)))
+}
+
+# Load necessary library
+library(ggplot2)
+
+# Define lambda values
+lambda_values <- seq(0.5, 0.99, by = 0.01)
+
+# Define horizons
+horizons <- 1:12
+
+# Assume we have actual data and predicted values for each lambda
+set.seed(123)  # For reproducibility
+N <- 200
+actual_values <- rnorm(N)  # Replace this with your real data
+predicted_values_list <- list()  # Store predictions for each lambda
+
+for (lambda in lambda_values) {
+  # Simulate some predictions (this is where your model should be used)
+  predicted_values_list[[as.character(lambda)]] <- actual_values + rnorm(N, sd = (1 - lambda))
+}
+
+# Store RMSE results
+rmse_results <- data.frame()
+
+for (lambda in lambda_values) {
+  predicted_values <- predicted_values_list[[as.character(lambda)]]
+  
+  for (k in horizons) {
+    residuals <- compute_residuals(actual_values, predicted_values, k)
+    rmse_k <- compute_rmse(residuals)
+    
+    # Save results
+    rmse_results <- rbind(rmse_results, data.frame(lambda, k, RMSE = rmse_k))
+  }
+}
+
+# Plot RMSE vs. lambda for different horizons
+# ggplot(rmse_results, aes(x = lambda, y = RMSE, color = as.factor(k))) +
+#   geom_line() +
+#   labs(title = "RMSE vs. Forgetting Factor (λ)",
+#        x = "Lambda (λ)",
+#        y = "RMSE",
+#        color = "Horizon k") +
+#   theme_minimal()
+
+library(ggplot2)
+library(RColorBrewer)
+
+# Create a new column to group horizons into four separate plots
+rmse_results$facet_group <- cut(rmse_results$k, 
+                                breaks = c(0, 3, 6, 9, 12), 
+                                labels = c("Horizons 1-3", "Horizons 4-6", "Horizons 7-9", "Horizons 10-12"))
+
+# Use a better color palette (Set3 has more distinguishable colors)
+color_palette <- RColorBrewer::brewer.pal(12, "Set3")
+
+# Plot RMSE vs. lambda for different horizons, grouped into four facets
+ggplot(rmse_results, aes(x = lambda, y = RMSE, color = as.factor(k))) +
+  geom_line(size = 1) +  # Make lines slightly thicker for better visibility
+  scale_color_manual(values = color_palette) +  # Use the new color map
+  labs(title = "RMSE vs. Forgetting Factor (λ)",
+       x = "Lambda (λ)",
+       y = "RMSE",
+       color = "Horizon k") +
+  theme_minimal(base_size = 14) +  # Increase overall font size
+  facet_wrap(~facet_group, scales = "free_x") +  # Create 4 panels, sharing y-axis
+  theme(legend.position = "bottom",  # Move legend to bottom
+        legend.text = element_text(size = 12),  # Increase legend text size
+        strip.text = element_text(size = 14, face = "bold"),  # Make facet labels larger and bold
+        axis.text = element_text(size = 12),  # Increase axis label sizes
+        axis.title = element_text(size = 14, face = "bold"))  # Make axis titles bigger and bold
+
+
+
+
+
+
+# 4.7
+
+RLS_predict <- function(lambda, horizon, Xtest) {
+  ntest <- nrow(Xtest)  # Number of test observations
+  theta <- matrix(0, nrow = 2, ncol = 1)  # Initialize theta
+  R <- diag(0.1, 2)  # Initialize R
+  
+  predictions <- numeric(ntest)  # Vector to store predictions for the test set
+  
+  # Loop over the test set to make predictions
+  for (h in 1:ntest) {
+    x_t <- matrix(Xtest[h, ], nrow = 2, ncol = 1)  # Extract current x_t from test set
+    
+    # Update covariance matrix with forgetting factor λ
+    R <- lambda * R + x_t %*% t(x_t)
+    
+    # Update parameter estimate
+    theta <- theta + solve(R) %*% x_t %*% (ytest[h] - t(x_t) %*% theta)
+    
+    # Make prediction for the current test sample
+    predictions[h] <- t(x_t) %*% theta
+  }
+  
+  # After all predictions, the result can be "shifted" based on the horizon
+  # This will return predictions for the horizon ahead
+  if (horizon > 1) {
+    predictions <- predictions[1:horizon]  # Only take predictions up to the horizon
+  }
+  
+  return(predictions)  # Return the vector of predictions for the test set
+}
