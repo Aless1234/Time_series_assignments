@@ -203,10 +203,24 @@ theta_WLS <- solve(t(X)%*%solve(SIGMA)%*%X)%*%(t(X)%*%solve(SIGMA)%*%y)
 print(theta_WLS)
 yhat_wls <- X%*%theta_WLS
 
-ggplot(Dtrain, aes(x=year, y=total)) +
-  geom_point(col="black") + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5, linetype=2) +
-  geom_line(aes(y=yhat_wls), col="blue", size=.5)
+# Plot with bigger axis labels and readable legend
+# Estimate theta_WLS
+theta_WLS <- solve(t(X) %*% solve(SIGMA) %*% X) %*% (t(X) %*% solve(SIGMA) %*% y)
+print(theta_WLS)
+yhat_wls <- X %*% theta_WLS
+
+# Plot with bigger axis labels and readable legend
+ggplot(Dtrain, aes(x = year, y = total)) +
+  geom_point(col = "black") + 
+  geom_line(aes(y = yhat_ols, color = "OLS"), size = 0.5, linetype = 2) +  # Color mapped in aes() for OLS
+  geom_line(aes(y = yhat_wls, color = "WLS"), size = 0.5) +  # Color mapped in aes() for WLS
+  labs(x = "Year", y = "Total") +  # Label the axes
+  theme(axis.title = element_text(size = 16),   # Increase size of axis labels
+        axis.text = element_text(size = 14),    # Increase size of axis numbers
+        legend.title = element_blank(),         # Remove legend title
+        legend.text = element_text(size = 12),  # Increase size of legend text
+        legend.position = "right") +  # Move legend to the top
+  scale_color_manual(values = c("OLS" = "red", "WLS" = "blue"))  # Define colors for legend
 
 # Exercise 3.5: Make the forecast for the next 12 months
 y_pred_wls <- Xtest%*%theta_WLS
@@ -219,17 +233,23 @@ Vmatrix_pred <- sigma2_wls * (1 + (Xtest %*% solve(t(X)%*%solve(SIGMA)%*%X)) %*%
 y_pred_lwr_wls <- y_pred_wls - qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
 y_pred_upr_wls <- y_pred_wls + qt(0.975, df=n-1)*sqrt(diag(Vmatrix_pred))
 
-# Plot of observation for training set, OLS predictions, WLS predictions and prediction intervals
-ggplot(Dtrain, aes(x=year, y=total)) +
-  geom_point(col="red") + 
-  geom_line(aes(y=yhat_ols), col="red", size=.5, linetype=2) +
-  geom_point(data=Dtest, aes(x=year,y=y_pred), col="red", size=.5) +
-  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr, ymax=y_pred_upr), inherit.aes=FALSE, alpha=0.1, fill="red") +
-  geom_point(data=Dtest, aes(x=year,y=total), col="black") +
-  geom_line(aes(y=yhat_wls), col="blue", size=.5) +
-  geom_point(data=Dtest, aes(x=year,y=y_pred_wls), col="blue", size=.5) +
-  geom_ribbon(data=Dtest, aes(x=year,ymin=y_pred_lwr_wls, ymax=y_pred_upr_wls), inherit.aes=FALSE, alpha=0.2, fill="blue") 
-#coord_cartesian(ylim = c(0, 8), xlim = c(1980,2020)) 
+#Plot
+ggplot(Dtrain, aes(x = year, y = total)) +
+  geom_point(aes(color = "Training data"), size = 2) +  # Map "Observed data" to color
+  geom_line(aes(y = yhat_ols, color = "OLS"), size = 0.5, linetype = 2) +  # Map "OLS" to color
+  geom_point(data = Dtest, aes(x = year, y = y_pred, color = "OLS"), size = 0.5) +  # Map "OLS" to color for test data
+  geom_ribbon(data = Dtest, aes(x = year, ymin = y_pred_lwr, ymax = y_pred_upr, fill = "OLS"), inherit.aes = FALSE, alpha = 0.1) +  # Map fill to "OLS" for prediction interval
+  # geom_point(data = Dtest, aes(x = year, y = total, color = "Observed data"), size = 2) +  # Map "Observed data" to color for test data
+  geom_line(aes(y = yhat_wls, color = "WLS"), size = 0.5) +  # Map "WLS" to color for WLS line
+  geom_point(data = Dtest, aes(x = year, y = y_pred_wls, color = "WLS"), size = 0.5) +  # Map "WLS" to color for WLS points
+  geom_ribbon(data = Dtest, aes(x = year, ymin = y_pred_lwr_wls, ymax = y_pred_upr_wls, fill = "WLS"), inherit.aes = FALSE, alpha = 0.2) +  # Map fill to "WLS" for prediction interval
+  scale_color_manual(values = c("Training data" = "black", "OLS" = "red", "WLS" = "blue")) +  # Define colors for the legend
+  scale_fill_manual(values = c("OLS" = "red", "WLS" = "blue")) +  # Define fill colors for ribbons
+  labs(color = "Model", fill = "Confidence interval") +  # Set legend title
+  theme(legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12), 
+        legend.position = "right")  # Adjust legend appearance
+
 
 #################################################
 # 4 - RLS 
