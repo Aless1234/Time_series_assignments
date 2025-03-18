@@ -126,20 +126,6 @@ acf(sim_data_3)
 
 pacf(sim_data_3)
 
-## Exercise 3.4 ##
-
-phi1 <- 0.6 # opposite sign
-
-Phi1 <- 0.8 # opposite sign
-
-# adding the indiivual simulations together
-
-sim_data_total_test <- arima.sim(n = n, model = list(ar = c(phi1,rep(0,10),Phi1,-phi1*Phi1)), sd = 1)
-
-acf(sim_data_total_test)
-
-pacf(sim_data_total_test)
-
 # ----------------------------- Raul's code -----------------------------------
 
 
