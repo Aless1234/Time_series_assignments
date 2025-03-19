@@ -1,5 +1,6 @@
 # Libraries to be used in this assignment
 # install.packages("forecast")
+# install.packages("ggplot2")
 library(ggplot2)
 library(forecast)
 
@@ -58,6 +59,15 @@ ggsave("acf_ra.png", plot = acf_plot, width = 8, height = 4, dpi = 300)
 # ----------------------------- Exercise 2 ----------------------------------- 
 # ----------------------------- Angel code -----------------------------------
 
+# Function for plot
+plotit <- function(x){
+  layout(rbind(1,2:3))
+  par(mar=c(3,3,1,1), mgp=c(2, 0.7,0))
+  plot(x, ylab="X")
+  acf(x, lag.max=50, lwd=2)
+  pacf(x, lag.max=50, lwd=2)
+}
+
 n <- 1500
 
 ## Exercise 3.1 ##
@@ -69,64 +79,64 @@ set.seed(44)  # Setting seed for reproducibility
 
 sim_data <- arima.sim(n = n, model = list(ar = phi1, order = c(1,0,0)), sd = 1)
 
-# Convert simulated data into a data frame for ggplot
-time_series <- data.frame(Time = 1:length(sim_data), Value = as.numeric(sim_data))
+plotit(sim_data)
 
-# Create the plot
-ggplot(time_series, aes(x = Time, y = Value)) +
-  geom_line(color = "black", size = 0.7) +  # Black line
-  geom_point(color = "red", size = 1.5) +  # Red points for visibility
-  theme_minimal() +  # Clean theme
-  labs(title = "Simulated AR(1) Process",
-       x = "Index",
-       y = "Simulated Data") +
-  theme(text = element_text(size = 16),  # Increase font size
-        axis.title = element_text(size = 18),  
-        plot.title = element_text(size = 20, face = "bold"))
+# # Convert simulated data into a data frame for ggplot
+# time_series <- data.frame(Time = 1:length(sim_data), Value = as.numeric(sim_data))
 
-# Calculate ACF and PACF
-acf_1 <- acf(sim_data, plot = FALSE)
-pacf_1 <- pacf(sim_data, plot = FALSE)
+# # Create the plot
+# ggplot(time_series, aes(x = Time, y = Value)) +
+#   geom_line(color = "black", size = 0.7) +  # Black line
+#   geom_point(color = "red", size = 1.5) +  # Red points for visibility
+#   theme_minimal() +  # Clean theme
+#   labs(title = "Simulated AR(1) Process",
+#        x = "Index",
+#        y = "Simulated Data") +
+#   theme(text = element_text(size = 16),  # Increase font size
+#         axis.title = element_text(size = 18),  
+#         plot.title = element_text(size = 20, face = "bold"))
 
-# Plot ACF with increased font size and grid
-acf(sim_data, main = "Autocorrelation Function (ACF)", cex.axis = 1.5, cex.lab = 1.5)
-grid()  # Add grid
+# # Calculate ACF and PACF
+# acf_1 <- acf(sim_data, plot = FALSE)
+# pacf_1 <- pacf(sim_data, plot = FALSE)
 
-# Plot PACF with increased font size and grid
-pacf(sim_data, main = "Partial Autocorrelation Function (PACF)", cex.axis = 1.5, cex.lab = 1.5)
-grid()  # Add grid
+# # Plot ACF with increased font size and grid
+# acf(sim_data, main = "Autocorrelation Function (ACF)", cex.axis = 1.5, cex.lab = 1.5)
+# grid()  # Add grid
+
+# # Plot PACF with increased font size and grid
+# pacf(sim_data, main = "Partial Autocorrelation Function (PACF)", cex.axis = 1.5, cex.lab = 1.5)
+# grid()  # Add grid
 
 
 
 ## Exercise 3.2 ##
 
 # Parameters
-
 Phi1 <- 0.9
 
 # Simulate seasonal AR(1) process
-
 set.seed(42) # For reproducibility
 
 sim_data_2 <- arima.sim(model =list(ar = c(numeric(11),Phi1)),n = n, sd = 1)
+plotit(sim_data_2)
 
-acf(sim_data_2)
-
-pacf(sim_data_2)
+# acf(sim_data_2)
+# pacf(sim_data_2)
 
 ## Exercise 3.3 ##
 
 phi1 <- -0.9 # opposite sign
-
 theta1 <- -0.7
 
 sim_data_3 <- arima.sim(n = n, model = list(ar = phi1, ma = c(numeric(11),theta1)), sd = 1)
+plotit(sim_data_3)
 
-acf(sim_data_3)
-
-pacf(sim_data_3)
+# acf(sim_data_3)
+# pacf(sim_data_3)
 
 # ----------------------------- Raul's code -----------------------------------
+
 
 
 
