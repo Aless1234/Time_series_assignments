@@ -19,7 +19,7 @@ print(getwd())
 
 
 # ----------------------------- Exercise 3 -----------------------------------
-#3.1. Read the data and plot the three non-lagged time series (Ph,Tdelta,Gv). Describe the time series and if you can see some dependencies between the variables.
+#3.1. Read the data and plot the three non-lagged time series (Ph,Tdelta,Gv)
 D3 <- read.csv("box_data_60min.csv")
 str(D3)
 
@@ -55,4 +55,29 @@ D3_train <- D3[D3$tdate <= test_start, ]
 D3_test <- D3[D3$tdate > test_start, ]
 
 str(D3_train) #should be 167 observations
+
+#3.3. Investigate the variables and their relationships
+
+library(GGally)
+library(dplyr)
+
+# Select only non-lagged columns for training data
+D3_train_small <- D3_train %>%
+  select(Ph, Tdelta, Gv)
+
+# Scatterplot matrix
+ggpairs(D3_train_small)
+
+#acf of Ph
+acf(D3_train$Ph, main = "ACF of Ph (Auto-correlation)")
+
+#cross-correlation
+
+# Cross-correlation of Ph and Tdelta
+ccf(D3_train$Ph, D3_train$Tdelta, main = "Cross-correlation: Ph vs Tdelta")
+
+# Cross-correlation of Ph and Gv
+ccf(D3_train$Ph, D3_train$Gv, main = "Cross-correlation: Ph vs Gv")
+
+
 
