@@ -45,3 +45,14 @@ p3 <- ggplot(D3, aes(x = tdate, y = Gv)) +
 # Combine plots into one figure
 combined_plot <- p1 / p2 / p3 + plot_annotation(title = "Time Series of Ph, Tdelta, and Gv")
 combined_plot
+
+#3.2. Divide intro train and test set
+# Define the split point
+test_start <- ymd_hms("2013-02-06 00:00:00")
+
+# Split into training and test sets
+D3_train <- D3[D3$tdate <= test_start, ]
+D3_test <- D3[D3$tdate > test_start, ]
+
+str(D3_train) #should be 167 observations
+
