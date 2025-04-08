@@ -16,7 +16,9 @@ print(getwd())
 
 # Set phi values
 phi1 <-  0.6
-phi2 <-  -0.5
+phi2 <-  0.3
+
+polyroot(c(-0.2,-0.2,1))
 
 # Define the AR coefficients vector in the order of AR(1), AR(2), ...
 ar_coefs <- c(phi1, phi2)
@@ -48,17 +50,18 @@ final_simulated_data <- data.frame(cbind(index = rep(1:200,times=5),value = fina
 
 final_simulated_data$sim_number <- factor(final_simulated_data$sim_number)
 
-ggplot(final_simulated_data, aes(x = index, y = value, color = sim_number, group = sim_number)) + 
+plot <- ggplot(final_simulated_data, aes(x = index, y = value, color = sim_number, group = sim_number)) + 
   geom_point() +
   geom_line() +
   scale_color_brewer(palette = "Set1") + # Use a professional color palette
   theme_minimal() + # Use a clean theme
   theme(aspect.ratio = 2/3) + # Make the graph more horizontal
-  labs(title = "Simulated with ϕ1 = 0.6 and ϕ2 = -0.3", 
+  labs(title = "Simulated with ϕ1 = - 0.6 and ϕ2 = - 0.3", 
      x = "Index", 
      y = "Value", 
      color = "Simulation Number")
 
+ggsave("acf_ra.png", plot = plot, width = 12, height = 6, dpi = 300)
 ## Exercise 1.2 ##
 
 # Theoretical ACF
@@ -101,7 +104,7 @@ for (i in 1:5) {
 }
 
 # Plot all ACFs (no lines, just vertical segments + points)
-ggplot(acf_df, aes(x = lag, y = acf_value, color = type)) +
+acf <- ggplot(acf_df, aes(x = lag, y = acf_value, color = type)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_segment(aes(xend = lag, yend = 0), size = 0.7) +
   geom_point(size = 2) +
@@ -109,6 +112,8 @@ ggplot(acf_df, aes(x = lag, y = acf_value, color = type)) +
   theme_minimal() +
   ggtitle("Empirical ACFs of 5 Simulations vs. Theoretical ACF") +
   scale_color_brewer(palette = "Dark2")
+
+ggsave("acf.png", plot = acf, width = 12, height = 6, dpi = 300)
 
 
 
