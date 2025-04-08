@@ -61,7 +61,7 @@ ggplot(final_simulated_data, aes(x = index, y = value, color = sim_number, group
 
 ## Exercise 1.2 ##
 
-# Step 1: Theoretical ACF (same as before)
+# Theoretical ACF
 calculate_acf <- function(phi1, phi2, k, acf_values) {
   if (k == 0) {
     return(1)
@@ -86,7 +86,7 @@ acf_df <- data.frame(
   type = "Theoretical"
 )
 
-# Step 2: Empirical ACF for each simulation
+# Empirical ACF for each simulation
 for (i in 1:5) {
   sim_data <- subset(final_simulated_data, sim_number == i)
   acf_sim <- Acf(sim_data$value, lag.max = n_lags, plot = FALSE)
@@ -100,7 +100,7 @@ for (i in 1:5) {
   acf_df <- rbind(acf_df, temp_df)
 }
 
-# Step 3: Plot all ACFs (no lines, just vertical segments + points)
+# Plot all ACFs (no lines, just vertical segments + points)
 ggplot(acf_df, aes(x = lag, y = acf_value, color = type)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_segment(aes(xend = lag, yend = 0), size = 0.7) +
