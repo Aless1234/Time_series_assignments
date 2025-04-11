@@ -6,6 +6,7 @@ library(lubridate)
 library(patchwork)
 library(GGally)
 library(dplyr)
+library(tibble)
 
 setwd("Assignment3")
 print(getwd())
@@ -91,3 +92,47 @@ ccf(D3_train$Ph, D3_train$Tdelta, main = "Cross-correlation: Ph vs Tdelta")
 
 # Cross-correlation of Ph and Gv
 ccf(D3_train$Ph, D3_train$Gv, main = "Cross-correlation: Ph vs Gv")
+
+# 3.4. Estimate the impulse response from Tdelts and Gv to Ph, up to lag 10
+# Standardize: use [,1] to extract numeric vector
+D3_train_z <- D3_train %>%
+  mutate(
+    Ph_z = scale(Ph)[, 1],
+    Tdelta_z = scale(Tdelta)[, 1],
+    Gv_z = scale(Gv)[, 1]
+  )
+
+# CCF: From Tdelta to Ph
+ccf_tdelta <- ccf(D3_train_z$Tdelta_z, D3_train_z$Ph_z, lag.max = 10, plot = FALSE)
+
+# CCF: From Gv to Ph
+ccf_gv <- ccf(D3_train_z$Gv_z, D3_train_z$Ph_z, lag.max = 10, plot = FALSE)
+
+# Convert CCF output to data frames
+irf_tdelta <- tibble(
+  Lag = as.vector(ccf_tdelta$lag),
+  Correlation = as.vector(ccf_tdelta$acf)
+) %>% filter(Lag >= 0 & Lag <= 10)
+
+irf_gv <- tibble(
+  Lag = as.vector(ccf_gv$lag),
+  Correlation = as.vector(ccf_gv$acf)
+) %>% filter(Lag >= 0 & Lag <= 10)
+
+
+# Plot: Impulse response from Tdelta to Ph
+p_irf_tdelta <- ggplot(irf_tdelta, aes(x = Lag, y = Correlation)) +
+  geom_col(fill = "darkgreen") +
+  labs(title = "Impulse Response: Tdelta → Ph", x = "Lag", y = "Cross-Correlation") +
+  theme_minimal(base_size = 14)
+
+# Plot: Impulse response from Gv to Ph
+p_irf_gv <- ggplot(irf_gv, aes(x = Lag, y = Correlation)) +
+  geom_col(fill = "firebrick") +
+  labs(title = "Impulse Response: Gv → Ph", x = "Lag", y = "Cross-Correlation") +
+  theme_minimal(base_size = 14)
+
+# Save them
+ggsave("3.4-irf_tdelta_ph.png", p_irf_tdelta, width = 8, height = 5)
+ggsave("3.4-irf_gv_ph.png", p_irf_gv, width = 8, height = 5)
+
