@@ -136,3 +136,37 @@ p_irf_gv <- ggplot(irf_gv, aes(x = Lag, y = Correlation)) +
 ggsave("3.4-irf_tdelta_ph.png", p_irf_tdelta, width = 8, height = 5)
 ggsave("3.4-irf_gv_ph.png", p_irf_gv, width = 8, height = 5)
 
+# 3.5. Fit the linear regression model
+
+lm_fit <- lm(Ph ~ Tdelta + Gv, data = D3_train)
+summary(lm_fit)
+
+# 2. One-step-ahead predictions and residuals
+D3_train$Ph_pred <- predict(lm_fit)
+D3_train$resid <- D3_train$Ph - D3_train$Ph_pred
+
+# 3. Plot actual vs predicted
+p_pred <- ggplot(D3_train, aes(x = tdate)) +
+  geom_line(aes(y = Ph, color = "Actual")) +
+  geom_line(aes(y = Ph_pred, color = "Predicted")) +
+  scale_color_manual(values = c("Actual" = "black", "Predicted" = "steelblue")) +
+  theme_minimal(base_size = 14)
+
+# 4. Plot residuals over time
+p_resid <- ggplot(D3_train, aes(x = tdate, y = resid)) +
+  geom_line(color = "firebrick") +
+  labs(title = "Residuals over Time", y = "Residual", x = "Time") +
+  theme_minimal(base_size = 14)
+
+# 5. ACF of residuals
+acf(D3_train$resid, main = "ACF of Residuals")
+
+# 6. Cross-correlation: Residuals vs Tdelta
+ccf(D3_train$resid, D3_train$Tdelta, main = "CCF: Residuals vs Tdelta")
+
+# 7. Cross-correlation: Residuals vs Gv
+ccf(D3_train$resid, D3_train$Gv, main = "CCF: Residuals vs Gv")
+
+# 8. Save plots
+ggsave("3.5-actual_vs_pred.png", p_pred, width = 8, height = 5)
+ggsave("3.5-residuals.png", p_resid, width = 8, height = 5)
