@@ -160,7 +160,7 @@ p <- ggplot() +
   geom_line(data = subset(df, Series=="True"),
             aes(x = t, y = Value, color = "True state"), size = 1.1) +
   geom_point(data = subset(df, Series=="Obs"),
-             aes(x = t, y = Value, color = "Obs"), size = 0.8, alpha = 0.6) +
+             aes(x = t, y = Value, color = "Obs"), size = 2.0, alpha = 0.6) +
   geom_line(data = subset(df, Series=="Pred"),
             aes(x = t, y = Value, color = "Pred"), linetype = "dashed", size = 1) +
   scale_color_manual(name = "", 
@@ -170,7 +170,7 @@ p <- ggplot() +
   labs(
        x = "Time step t",
        y = expression(X[t])) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(legend.position = "top")
 
 print(p)
@@ -182,5 +182,7 @@ ggsave("1.3.png",
        dpi    = 300)
 
 # ------------------------------- Exercise 2 -------------------------------
+
+
 
 
