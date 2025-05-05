@@ -57,7 +57,7 @@ print(p)
 
 
 ggsave(
-  "1.1.png",
+  "Figures/1.1.png",
   plot   = p,
   width  = 15,    # inches
   height = 7,    # inches
@@ -109,7 +109,7 @@ p <- ggplot(df_long, aes(x=t, y=Value, color=Series, linetype=Series)) +
 
 print(p)
 
-ggsave("1.2.png", plot = p,
+ggsave("Figures/1.2.png", plot = p,
        width  = 15, height = 7, dpi = 300)
 
 # Exercise 1.3 : Kalman filter on AR(1)+drift: True vs. Observed vs. Predicted
@@ -176,7 +176,7 @@ p <- ggplot() +
 
 print(p)
 
-ggsave("1.3.png",
+ggsave("Figures/1.3.png",
        plot   = p,
        width  = 15,    # inches
        height = 10,    # inches
