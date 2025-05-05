@@ -19,19 +19,19 @@ myKalmanFilter <- function(
   for (t in seq_len(N)) {
     # the prediction step
     if (t == 1) {
-      x_pred[t] <- # the mean prediction using the prior
-      P_pred[t] <- # the variance prediction using the prior
+      x_pred[t] <- a * x_prior + b # the mean prediction using the prior
+      P_pred[t] <- a^2 * P_prior + sigma1^2 # the variance prediction using the prior
     } else {
-      x_pred[t] <- # the mean prediction using the previous filtered estimate
-      P_pred[t] <- # the variance prediction using the previous filtered estimate
+      x_pred[t] <- a * x_filt[t-1] + b # the mean prediction using the previous filtered estimate
+      P_pred[t] <- a^2 * P_filt[t-1] + sigma1^2 # the variance prediction using the previous filtered estimate
     }
     
     # the update step
-    innovation[t] <- # the prediction error
-    innovation_var[t] <- # the prediction error variance
-    K_t <- # the Kalman gain
-    x_filt[t] <- # the filtered estimate
-    P_filt[t] <- # the filtered estimate variance
+    innovation[t] <- y[t] - x_pred[t] # the prediction error
+    innovation_var[t] <- P_pred[t] + R # the prediction error variance
+    K_t <- P_pred[t] / innovation_var[t]  # the Kalman gain
+    x_filt[t] <- x_pred[t] + K_t * innovation[t] # the filtered estimate
+    P_filt[t] <- (1 - K_t) * P_pred[t] # the filtered estimate variance
   }
   
   return(list(
