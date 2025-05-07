@@ -263,8 +263,7 @@ for (param in params) {
       plot.title = element_text(size = 18, face = "bold"), # Larger title
       axis.title = element_text(size = 16)  # Larger axis titles
     ) +
-    labs(title = paste("Estimation of", param),
-         y = "Estimated Value", x = "True Parameter Setting")
+    labs(y = "Estimated Value", x = "True Parameter Setting")         
   
   # Save with same increased dimensions
   ggsave(filename = paste0("Figures/1.4_", param, ".png"),
