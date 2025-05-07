@@ -183,6 +183,92 @@ ggsave("Figures/1.3.png",
        dpi    = 300)
 
 
+# Exercise 1.4 : Estimation of parameters using maximum likelihood
+
+simulate_data <- function(n, a, b, sigma1, sigma2 = 1, X0 = 0) {
+  X <- numeric(n)
+  Y <- numeric(n)
+  X[1] <- a * X0 + b + rnorm(1, 0, sigma1)
+  Y[1] <- X[1] + rnorm(1, 0, sigma2)
+  
+  for (t in 2:n) {
+    X[t] <- a * X[t-1] + b + rnorm(1, 0, sigma1)
+    Y[t] <- X[t] + rnorm(1, 0, sigma2)
+  }
+  list(X = X, Y = Y)
+}
+
+source("functions/myLogLikFun.R")
+estimate_params <- function(n_sim = 100, n = 100, true_params, R = 1, x_prior = 0, P_prior = 10) {
+  estimates <- matrix(NA, nrow = n_sim, ncol = 3)
+  colnames(estimates) <- c("a", "b", "sigma1")
+
+  for (i in 1:n_sim) {
+    sim <- simulate_data(n, true_params[1], true_params[2], true_params[3], sigma2 = R)
+    y <- sim$Y
+
+    # Initial guess (can be tuned)
+    theta0 <- c(0.5, 0.5, 0.5)
+
+    fit <- optim(
+      par = theta0,
+      fn = myLogLikFun,
+      y = y,
+      R = R,
+      x_prior = x_prior,
+      P_prior = P_prior,
+      method = "L-BFGS-B",
+      lower = c(-10, -10, 1e-4),
+      upper = c(10, 10, 10)
+    )
+
+    estimates[i, ] <- fit$par
+  }
+
+  as.data.frame(estimates)
+}
+
+set.seed(423)
+params_list <- list(
+  c(1, 0.9, 1),
+  c(5, 0.9, 1),
+  c(1, 0.9, 5)
+)
+
+results <- lapply(params_list, function(p) estimate_params(true_params = p))
+
+# Add labels
+for (i in 1:length(results)) {
+  results[[i]]$scenario <- paste0("a=", params_list[[i]][1], ", sigma1=", params_list[[i]][3])
+}
+
+# Combine all
+library(reshape2)
+library(ggplot2)
+
+all_results <- do.call(rbind, results)
+long_results <- melt(all_results, id.vars = "scenario", variable.name = "parameter")
+
+# Get the unique parameter names
+params <- unique(long_results$parameter)
+
+# Create a plot for each parameter and save separately
+for (param in params) {
+  p <- ggplot(filter(long_results, parameter == param), 
+              aes(x = scenario, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    labs(title = paste("Estimation of", param),
+         y = "Estimated Value", x = "True Parameter Setting")
+  
+  ggsave(filename = paste0("Figures/1.4_", param, ".png"),
+         plot = p,
+         width = 6,
+         height = 10,
+         dpi = 300)
+}
+
+
 # ------------------------------- Exercise 2 -------------------------------
 # Exercise 2.1
 # Load the data
