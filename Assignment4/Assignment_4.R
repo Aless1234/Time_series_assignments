@@ -257,14 +257,20 @@ for (param in params) {
   p <- ggplot(filter(long_results, parameter == param), 
               aes(x = scenario, y = value)) +
     geom_boxplot() +
-    theme_minimal() +
+    theme_minimal(base_size = 16) +  # <-- Increase base font size
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x-axis labels if long
+      plot.title = element_text(size = 18, face = "bold"), # Larger title
+      axis.title = element_text(size = 16)  # Larger axis titles
+    ) +
     labs(title = paste("Estimation of", param),
          y = "Estimated Value", x = "True Parameter Setting")
   
+  # Save with same increased dimensions
   ggsave(filename = paste0("Figures/1.4_", param, ".png"),
          plot = p,
-         width = 6,
-         height = 10,
+         width = 5,    # Slightly wider
+         height = 7,
          dpi = 300)
 }
 
