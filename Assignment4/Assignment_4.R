@@ -273,7 +273,88 @@ for (param in params) {
          dpi = 300)
 }
 
+## 1.5. Simulate system noise from a Student’s t-distribution instead.
 
+# Simulate data
+
+set.seed(250)
+
+# Parameters
+a <- 1
+b <- 0.9
+sigma1 <- 1
+sigma2 <- 1
+n <- 100
+n_sim <- 100
+nu_values <- c(100, 5, 2, 1)
+
+# Storage
+sim_data <- list()
+
+for (nu in nu_values) {
+  sim_list <- vector("list", n_sim)
+  
+  for (sim in 1:n_sim) {
+    X <- numeric(n)
+    Y <- numeric(n)
+    
+    X[1] <- 0  # Initial state
+    
+    for (t in 2:n) {
+      lambda_t <- rt(1, df = nu)
+      X[t] <- a * X[t - 1] + b + sigma1 * lambda_t
+    }
+    
+    Y <- X + rnorm(n, mean = 0, sd = sigma2)
+    
+    sim_list[[sim]] <- data.frame(
+      time = 1:n,
+      X = X,
+      Y = Y,
+      sim = sim
+    )
+  }
+  
+  sim_data[[as.character(nu)]] <- do.call(rbind, sim_list)
+}
+
+# Plot t-distribution densities vs Normal
+
+# Define a range of x values for plotting the densities
+x_vals <- seq(-5, 5, length.out = 1000)
+
+# Create a data frame with density values
+density_df <- data.frame(
+  x = x_vals,
+  Normal = dnorm(x_vals),
+  t_100 = dt(x_vals, df = 100),
+  t_5   = dt(x_vals, df = 5),
+  t_2   = dt(x_vals, df = 2),
+  t_1   = dt(x_vals, df = 1)
+)
+
+# Reshape to long format for ggplot
+density_long <- pivot_longer(density_df, cols = -x,
+                              names_to = "distribution",
+                              values_to = "density")
+
+# Plot
+p <- ggplot(density_long, aes(x = x, y = density, color = distribution)) +
+  geom_line(size = 1.2) +
+  labs(title = "t-Distribution vs Normal Distribution",
+       subtitle = "Densities for t(100), t(5), t(2), t(1), and N(0,1)",
+       x = "Value", y = "Density") +
+  theme_minimal(base_size = 14) +
+  scale_color_manual(values = c("black", "blue", "red", "orange", "purple")) +
+  theme(legend.title = element_blank())
+
+print(p)
+
+ggsave("Figures/1.5.png",
+       plot   = p,
+       width  = 15,    # inches
+       height = 7,    # inches
+       dpi    = 300)
 # ------------------------------- Exercise 2 -------------------------------
 # Exercise 2.1
 # Load the data
