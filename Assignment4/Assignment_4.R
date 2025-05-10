@@ -341,9 +341,7 @@ density_long <- pivot_longer(density_df, cols = -x,
 # Plot
 p <- ggplot(density_long, aes(x = x, y = density, color = distribution)) +
   geom_line(size = 1.2) +
-  labs(title = "t-Distribution vs Normal Distribution",
-       subtitle = "Densities for t(100), t(5), t(2), t(1), and N(0,1)",
-       x = "Value", y = "Density") +
+  labs(x = "Value", y = "Density") +
   theme_minimal(base_size = 14) +
   scale_color_manual(values = c("black", "blue", "red", "orange", "purple")) +
   theme(legend.title = element_blank())
