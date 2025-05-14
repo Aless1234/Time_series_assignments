@@ -353,6 +353,70 @@ ggsave("Figures/1.5.png",
        width  = 15,    # inches
        height = 7,    # inches
        dpi    = 300)
+
+#1.5: Estimation using Kalman filter on t-noise simulations
+# Estimate parameters on t-noise simulations
+t_results <- list()
+
+for (nu in names(sim_data)) {
+  sims <- split(sim_data[[nu]], sim_data[[nu]]$sim)
+  
+  ests <- matrix(NA, nrow = length(sims), ncol = 3)
+  colnames(ests) <- c("a", "b", "sigma1")
+  
+  for (i in 1:length(sims)) {
+    y <- sims[[i]]$Y
+    theta0 <- c(0.5, 0.5, 0.5)
+    
+    fit <- optim(
+      par = theta0,
+      fn = myLogLikFun,
+      y = y,
+      R = 1,
+      x_prior = 0,
+      P_prior = 10,
+      method = "L-BFGS-B",
+      lower = c(-10, -10, 1e-4),
+      upper = c(10, 10, 10)
+    )
+    
+    ests[i, ] <- fit$par
+  }
+  
+  df <- as.data.frame(ests)
+  df$nu <- as.numeric(nu)  # Store as numeric
+  t_results[[nu]] <- df
+}
+
+# Combine all results
+combined_estimates_t <- do.call(rbind, t_results)
+
+# Reshape for plotting
+long_estimates_t <- melt(combined_estimates_t, id.vars = "nu", variable.name = "parameter")
+
+# Sort nu as a factor for proper order
+long_estimates_t$nu <- factor(long_estimates_t$nu, levels = sort(unique(long_estimates_t$nu)))
+
+# Optional: pretty labels for the x-axis
+levels(long_estimates_t$nu) <- paste0("ν = ", levels(long_estimates_t$nu))
+
+# Plot boxplots per parameter
+for (param in unique(long_estimates_t$parameter)) {
+  p <- ggplot(filter(long_estimates_t, parameter == param), 
+              aes(x = nu, y = value)) +
+    geom_boxplot() +
+    theme_minimal(base_size = 16) +
+    labs(y = "Estimated Value", x = expression(nu~"(degrees of freedom)"))
+  
+  plot(p)
+  ggsave(filename = paste0("Figures/1.5_", param, ".png"),
+         plot = p,
+         width = 5,
+         height = 7,
+         dpi = 300)
+}
+
+
 # ------------------------------- Exercise 2 -------------------------------
 # Exercise 2.1
 # Load the data
